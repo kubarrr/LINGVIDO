@@ -11,16 +11,40 @@ export type LanguagePair = {
   level: LanguageLevel;
 };
 
+export type PartOfSpeech = "noun" | "verb" | "adjective" | "adverb" | "phrase" | "other";
+
 export type LessonWord = {
   word: string;
   translation: string;
   pronunciation?: string;
+  pos?: PartOfSpeech;
 };
 
 export type LessonConstruction = {
   pattern: string;
   example: string;
   translation: string;
+};
+
+/** A short text the model provides in both languages, for the display toggle. */
+export type Bilingual = {
+  native: string;
+  target: string;
+};
+
+/** "Calendar page" almanac about the country, tied to today's date. */
+export type LessonHistory = {
+  date_label: string;
+  on_this_day: Bilingual;
+  figure: Bilingual;
+  geo_fact: Bilingual;
+  holiday?: Bilingual;
+};
+
+/** Extra structured content stored as a single jsonb column. */
+export type LessonExtra = {
+  cultural_note_target?: string;
+  history?: LessonHistory;
 };
 
 export type LessonInputType = "photo" | "voice" | "text";
@@ -39,6 +63,7 @@ export type Lesson = {
   words: LessonWord[];
   constructions: LessonConstruction[];
   cultural_note?: string;
+  lesson_extra?: LessonExtra | null;
   xp_earned: number;
 };
 

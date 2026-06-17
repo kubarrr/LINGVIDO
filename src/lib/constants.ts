@@ -38,23 +38,23 @@ function dark(s: Seed): LanguageTheme {
   const h = s.hue;
   return {
     mode: "dark",
-    background: s.background ?? `oklch(0.11 0.025 ${h})`,
-    foreground: s.foreground ?? `oklch(0.96 0.012 ${h})`,
-    card: s.card ?? `oklch(0.15 0.03 ${h})`,
-    cardForeground: s.foreground ?? `oklch(0.96 0.012 ${h})`,
-    secondary: `oklch(0.18 0.03 ${h})`,
-    secondaryForeground: `oklch(0.74 0.02 ${h})`,
-    muted: `oklch(0.18 0.03 ${h})`,
-    mutedForeground: `oklch(0.64 0.03 ${h})`,
-    accent: `oklch(0.23 0.035 ${h})`,
-    border: `oklch(0.26 0.035 ${h})`,
+    background: s.background ?? `oklch(0.17 0.03 ${h})`,
+    foreground: s.foreground ?? `oklch(0.97 0.012 ${h})`,
+    card: s.card ?? `oklch(0.22 0.035 ${h})`,
+    cardForeground: s.foreground ?? `oklch(0.97 0.012 ${h})`,
+    secondary: `oklch(0.25 0.035 ${h})`,
+    secondaryForeground: `oklch(0.80 0.02 ${h})`,
+    muted: `oklch(0.25 0.035 ${h})`,
+    mutedForeground: `oklch(0.72 0.03 ${h})`,
+    accent: `oklch(0.30 0.04 ${h})`,
+    border: `oklch(0.34 0.04 ${h})`,
     primary: s.primary ?? s.from,
     primaryForeground: "oklch(0.99 0 0)",
-    glassBg: `oklch(0.14 0.025 ${h} / 0.85)`,
-    glassBorder: `oklch(0.7 0.2 ${h} / 0.18)`,
+    glassBg: `oklch(0.21 0.03 ${h} / 0.82)`,
+    glassBorder: `oklch(0.75 0.2 ${h} / 0.22)`,
     from: s.from,
     to: s.to,
-    glow: `oklch(0.62 0.2 ${h} / 0.45)`,
+    glow: `oklch(0.65 0.2 ${h} / 0.45)`,
   };
 }
 
@@ -86,8 +86,8 @@ export const LANGUAGE_THEMES: Record<string, LanguageTheme> = {
   // English — Union Jack: navy background, white text, red & blue accents (dark)
   en: dark({
     hue: 262, from: "oklch(0.50 0.20 262)", to: "oklch(0.58 0.24 25)",
-    background: "oklch(0.15 0.055 262)", card: "oklch(0.19 0.06 262)",
-    primary: "oklch(0.62 0.22 25)",
+    background: "oklch(0.20 0.06 262)", card: "oklch(0.25 0.065 262)",
+    primary: "oklch(0.64 0.22 25)",
   }),
   // Spanish — yellow background, red text & accents (light)
   es: light({
@@ -133,8 +133,8 @@ export const LANGUAGE_THEMES: Record<string, LanguageTheme> = {
   // Chinese — deep red background, gold accents (dark)
   zh: dark({
     hue: 30, from: "oklch(0.58 0.24 25)", to: "oklch(0.82 0.17 88)",
-    background: "oklch(0.16 0.07 28)", card: "oklch(0.20 0.08 28)",
-    primary: "oklch(0.78 0.16 78)",
+    background: "oklch(0.21 0.09 28)", card: "oklch(0.26 0.10 28)",
+    primary: "oklch(0.80 0.16 78)",
   }),
   // Korean — white background, blue & red accents (light)
   ko: light({
@@ -151,14 +151,14 @@ export const LANGUAGE_THEMES: Record<string, LanguageTheme> = {
   // Arabic — green background, white text & gold accents (dark)
   ar: dark({
     hue: 155, from: "oklch(0.55 0.15 155)", to: "oklch(0.72 0.15 150)",
-    background: "oklch(0.16 0.05 155)", card: "oklch(0.20 0.06 155)",
-    primary: "oklch(0.72 0.15 152)",
+    background: "oklch(0.21 0.06 155)", card: "oklch(0.26 0.07 155)",
+    primary: "oklch(0.74 0.15 152)",
   }),
   // Ukrainian — blue background, yellow accents (dark)
   uk: dark({
     hue: 250, from: "oklch(0.52 0.18 255)", to: "oklch(0.83 0.17 90)",
-    background: "oklch(0.17 0.07 255)", card: "oklch(0.21 0.08 255)",
-    primary: "oklch(0.82 0.17 88)",
+    background: "oklch(0.22 0.08 255)", card: "oklch(0.27 0.09 255)",
+    primary: "oklch(0.84 0.17 88)",
   }),
 };
 

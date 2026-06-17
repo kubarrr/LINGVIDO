@@ -33,6 +33,7 @@ create table public.lessons (
   words jsonb not null default '[]',
   constructions jsonb not null default '[]',
   cultural_note text,
+  lesson_extra jsonb,
   xp_earned integer not null default 0,
   created_at timestamptz not null default now()
 );

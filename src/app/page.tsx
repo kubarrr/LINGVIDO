@@ -12,14 +12,16 @@ import BottomNav from "@/components/BottomNav";
 import { useLanguageTheme } from "@/hooks/useLanguageTheme";
 
 // Minimal typing for the Web Speech API (not in standard lib.dom)
+type SpeechResult = { isFinal: boolean; 0: { transcript: string }; length: number };
 type SpeechRecognitionLike = {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
   start: () => void;
   stop: () => void;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onerror: (() => void) | null;
+  abort: () => void;
+  onresult: ((e: { resultIndex: number; results: ArrayLike<SpeechResult> }) => void) | null;
+  onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
 };
 
@@ -37,6 +39,8 @@ export default function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const wantListeningRef = useRef(false); // true while the user wants to keep recording
+  const finalRef = useRef("");            // confirmed (final) transcript so far
 
   const [state, setState] = useState<State>("idle");
   const [mode, setMode] = useState<Mode>("photo");
@@ -53,9 +57,9 @@ export default function HomePage() {
   const speechSupported = typeof window !== "undefined" &&
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
 
-  // Stop any recognition when leaving the page / switching mode
+  // Stop any recognition when leaving the page
   useEffect(() => {
-    return () => { recognitionRef.current?.stop(); };
+    return () => { wantListeningRef.current = false; recognitionRef.current?.abort(); };
   }, []);
 
   const handleFile = useCallback((file: File) => {
@@ -76,10 +80,17 @@ export default function HomePage() {
     if (file) handleFile(file);
   }, [handleFile]);
 
-  function toggleListening() {
+  function stopListening() {
+    wantListeningRef.current = false;
+    setListening(false);
+    recognitionRef.current?.stop();
+  }
+
+  function startListening() {
     if (!speechSupported) { toast.error("Voice input isn't supported in this browser"); return; }
-    if (listening) {
-      recognitionRef.current?.stop();
+    // Mic only works over HTTPS or localhost
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      toast.error("Microphone needs HTTPS or localhost — try the Text tab here.");
       return;
     }
     const Ctor = (window as unknown as {
@@ -87,28 +98,63 @@ export default function HomePage() {
       webkitSpeechRecognition?: new () => SpeechRecognitionLike;
     });
     const Recognition = Ctor.SpeechRecognition ?? Ctor.webkitSpeechRecognition;
-    if (!Recognition) return;
+    if (!Recognition) { toast.error("Voice input isn't supported in this browser"); return; }
+
+    // Continue appending to whatever is already in the box
+    finalRef.current = text ? text.trim() + " " : "";
+    wantListeningRef.current = true;
 
     const rec = new Recognition();
     rec.lang = SPEECH_LANG[profile?.native_language ?? "en"] ?? "en-US";
     rec.continuous = true;
     rec.interimResults = true;
+
     rec.onresult = (e) => {
-      let transcript = "";
-      for (let i = 0; i < e.results.length; i++) {
-        transcript += e.results[i][0].transcript;
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) finalRef.current += r[0].transcript + " ";
+        else interim += r[0].transcript;
       }
-      setText(transcript);
+      setText((finalRef.current + interim).trimStart());
     };
-    rec.onerror = () => { setListening(false); };
-    rec.onend = () => { setListening(false); };
+
+    rec.onerror = (e) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        toast.error("Microphone blocked — allow mic access in your browser.");
+        wantListeningRef.current = false;
+        setListening(false);
+      }
+      // other errors (no-speech, aborted, network) fall through to onend → auto-restart
+    };
+
+    rec.onend = () => {
+      // Chrome ends the session after a pause; restart if the user still wants to record
+      if (wantListeningRef.current) {
+        try { rec.start(); } catch { /* already starting */ }
+      } else {
+        setListening(false);
+      }
+    };
+
     recognitionRef.current = rec;
-    rec.start();
-    setListening(true);
+    try {
+      rec.start();
+      setListening(true);
+    } catch {
+      // start() throws if called too quickly after a previous stop
+      wantListeningRef.current = false;
+      setListening(false);
+    }
+  }
+
+  function toggleListening() {
+    if (listening) stopListening();
+    else startListening();
   }
 
   function switchMode(m: Mode) {
-    if (listening) recognitionRef.current?.stop();
+    if (listening) stopListening();
     setMode(m);
   }
 
@@ -121,7 +167,7 @@ export default function HomePage() {
       toast.error("Add a photo or write something first");
       return;
     }
-    if (listening) recognitionRef.current?.stop();
+    if (listening) stopListening();
     setState("analyzing");
 
     const form = new FormData();

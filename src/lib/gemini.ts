@@ -1,11 +1,21 @@
 import type { LanguageLevel, LessonWord, LessonConstruction } from "@/types";
 import { LANGUAGES } from "./constants";
 
+type Bilingual = { native: string; target: string };
+
 type GeneratedLesson = {
   object_detected: string;
   words: LessonWord[];
   constructions: LessonConstruction[];
   cultural_note: string;
+  cultural_note_target: string;
+  history: {
+    date_label: string;
+    on_this_day: Bilingual;
+    figure: Bilingual;
+    geo_fact: Bilingual;
+    holiday?: Bilingual;
+  };
 };
 
 // Free vision models on OpenRouter — tries each in order until one succeeds
@@ -25,10 +35,12 @@ export type LessonInput = {
   level: LanguageLevel;
   /** Topics already covered for this user+language — avoid repeating them. */
   avoidTopics?: string[];
+  /** Today's date, e.g. "17 June" — for the calendar/almanac section. */
+  today?: string;
 };
 
 export async function generateLesson(input: LessonInput): Promise<GeneratedLesson> {
-  const { imageBase64, mimeType, userText, targetLanguage, nativeLanguage, level, avoidTopics = [] } = input;
+  const { imageBase64, mimeType, userText, targetLanguage, nativeLanguage, level, avoidTopics = [], today = "" } = input;
   const targetLang = LANGUAGES.find((l) => l.code === targetLanguage)?.name ?? targetLanguage;
   const nativeLang = LANGUAGES.find((l) => l.code === nativeLanguage)?.name ?? nativeLanguage;
 
@@ -61,22 +73,30 @@ Respond ONLY with a valid JSON object in this exact format:
 {
   "object_detected": "the chosen specific topic in English (1-3 words, NOT a generic word)",
   "words": [
-    {"word": "word in ${targetLang}", "translation": "translation in ${nativeLang}", "pronunciation": "phonetic pronunciation if useful"},
-    {"word": "...", "translation": "...", "pronunciation": "..."},
-    {"word": "...", "translation": "...", "pronunciation": "..."},
-    {"word": "...", "translation": "...", "pronunciation": "..."}
+    {"word": "word in ${targetLang}", "translation": "translation in ${nativeLang}", "pronunciation": "phonetic pronunciation if useful", "pos": "noun|verb|adjective|adverb|phrase|other"},
+    {"word": "...", "translation": "...", "pronunciation": "...", "pos": "..."}
   ],
   "constructions": [
     {"pattern": "grammar pattern in ${targetLang}", "example": "full example sentence in ${targetLang}", "translation": "translation in ${nativeLang}"},
     {"pattern": "...", "example": "...", "translation": "..."}
   ],
-  "cultural_note": "A rich cultural insight about the topic — 4 to 5 sentences in ${nativeLang}. Cover: what this thing means to locals, any traditions or customs around it, an interesting historical or regional angle, and something a tourist or learner would not guess."
+  "cultural_note": "A rich cultural insight about the topic in ${nativeLang} — 4 to 5 sentences.",
+  "cultural_note_target": "The SAME cultural note, written in ${targetLang} (a faithful translation, natural for the level).",
+  "history": {
+    "date_label": "${today || "today"}",
+    "on_this_day": {"native": "in ${nativeLang}: an interesting event that happened in a country where ${targetLang} is spoken, ideally around this date", "target": "the same in ${targetLang}"},
+    "figure": {"native": "in ${nativeLang}: a notable historical figure from that culture (ideally with a birthday/anniversary near this date) and why they matter", "target": "the same in ${targetLang}"},
+    "geo_fact": {"native": "in ${nativeLang}: a vivid geographical fact about a region/place in that country (e.g. a description of Bavaria, Andalusia, etc.)", "target": "the same in ${targetLang}"},
+    "holiday": {"native": "in ${nativeLang}: a holiday or tradition celebrated around this date (or another notable one) — omit this whole field if none fits", "target": "the same in ${targetLang}"}
+  }
 }
 
 Rules:
-- Choose exactly 4 words most relevant to the chosen topic, appropriate for ${level} level
-- Constructions should use vocabulary from the words list
-- Cultural note must be genuinely insightful, 4-5 sentences minimum
+- Choose exactly 6 words most relevant to the chosen topic, appropriate for ${level} level, with an accurate "pos" (part of speech) for each
+- Provide exactly 4 grammar constructions; they should use vocabulary from the words list
+- cultural_note and cultural_note_target must be the same content in the two languages, 4-5 sentences, genuinely insightful
+- The "history" section is a daily "calendar page" about the country/culture of ${targetLang}; make each item concrete and real, 1-2 sentences, accurate, and tie to the date "${today}" where natural
+- Every bilingual field MUST contain both "native" (${nativeLang}) and "target" (${targetLang})
 - All content must be accurate`;
 
   // Build the multimodal message content (OpenRouter / OpenAI-compatible)

@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
       .filter(Boolean);
 
     // Generate lesson via OpenRouter
+    const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long" });
     const lessonData = await generateLesson({
       imageBase64: base64,
       mimeType: file?.type,
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
       nativeLanguage,
       level,
       avoidTopics,
+      today,
     });
 
     // Upload image to Supabase Storage (only when a photo was provided)
@@ -100,6 +102,10 @@ export async function POST(req: NextRequest) {
         words: lessonData.words,
         constructions: lessonData.constructions,
         cultural_note: lessonData.cultural_note,
+        lesson_extra: {
+          cultural_note_target: lessonData.cultural_note_target,
+          history: lessonData.history,
+        },
         xp_earned: xpEarned,
       })
       .select()
