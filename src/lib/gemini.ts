@@ -85,8 +85,20 @@ export async function generateLesson(input: LessonInput): Promise<GeneratedLesso
 
   const userTextBlock = hasText ? `\nThe learner's note: "${userText!.trim()}"\n` : "";
 
+  const LEVEL_GUIDE: Record<string, string> = {
+    A1: "Use only the most basic, high-frequency vocabulary and very simple present-tense sentences.",
+    A2: "Use common everyday vocabulary and simple tenses; keep sentences short and clear.",
+    B1: "Use intermediate vocabulary including some collocations and phrasal verbs; mix tenses and use natural sentences.",
+    B2: "Use upper-intermediate vocabulary, less common words, idiomatic collocations, and complex grammar (passive, conditionals, reported speech).",
+    C1: "Use advanced, sophisticated and lower-frequency vocabulary, nuanced register, and complex/native-like structures (subjunctive, inversion, ellipsis).",
+    C2: "Use rare, precise, formal or richly idiomatic vocabulary and the most complex literary structures; assume near-native mastery.",
+  };
+  const levelLine = LEVEL_GUIDE[level] ?? LEVEL_GUIDE.B1;
+
   const prompt = `You are an engaging, creative language teacher. Based on ${sourceDescription}, create a rich, interesting micro-lesson in ${targetLang} for a ${level} level student whose native language is ${nativeLang}.
 ${userTextBlock}${avoidBlock}
+DIFFICULTY — this is a ${level} learner: ${levelLine} The words and grammar MUST genuinely match ${level}; do not default to easy beginner content for higher levels.
+
 CHOOSING THE TOPIC (very important):
 - Pick a SPECIFIC, vivid, non-obvious focal point — a particular object, detail, action, material, or scene.
 - NEVER choose generic catch-all words like "person", "man", "woman", "people", "human", "thing", "object", "background". If a person is present, focus instead on what they are doing, wearing, holding, or their surroundings (e.g. "street musician", "knitted scarf", "morning commute").
@@ -107,8 +119,8 @@ Respond ONLY with a valid JSON object in this exact format:
 }
 
 Rules:
-- Choose exactly 6 words most relevant to the chosen topic, appropriate for ${level} level, with an accurate "pos" (part of speech) for each
-- Provide exactly 4 grammar constructions; they should use vocabulary from the words list
+- Choose exactly 6 words most relevant to the chosen topic, at genuine ${level} difficulty, with an accurate "pos" (part of speech) for each
+- Provide exactly 6 grammar constructions at ${level} difficulty; they should use vocabulary from the words list
 - Cultural note must be genuinely insightful, 4-5 sentences minimum
 - All content must be accurate`;
 
@@ -131,16 +143,16 @@ export async function generateAlmanac(opts: {
 
   const prompt = `Create a "calendar page" almanac about the culture and country/countries where ${targetLang} is spoken, for the date ${opts.today}. Everything must be real and accurate, and tie to this date where natural.
 
-Respond ONLY with a valid JSON object in this exact format. Every field has BOTH "native" (${nativeLang}) and "target" (${targetLang}) versions of the same content (1-2 sentences each):
+Respond ONLY with a valid JSON object in this exact format. Every field has BOTH "native" (${nativeLang}) and "target" (${targetLang}) versions of the SAME content. Each entry should be a SMALL PARAGRAPH of 3-4 sentences — informative and engaging, with concrete details (names, years, places):
 {
   "date_label": "${opts.today}",
-  "on_this_day": {"native": "an interesting historical event that happened on or around ${opts.today} in that culture", "target": "..."},
-  "figure": {"native": "a notable historical figure from that culture, ideally with a birthday/anniversary near ${opts.today}, and why they matter", "target": "..."},
-  "geo_fact": {"native": "a vivid geographical fact about a region/place in that country (e.g. Bavaria, Andalusia, Hokkaido)", "target": "..."},
-  "holiday": {"native": "a holiday or tradition celebrated around ${opts.today} (omit this field entirely if none fits)", "target": "..."}
+  "on_this_day": {"native": "an interesting historical event that happened on or around ${opts.today} in that culture, with context and why it mattered", "target": "..."},
+  "figure": {"native": "a notable historical figure from that culture, ideally with a birthday/anniversary near ${opts.today}; who they were, what they achieved, and their legacy", "target": "..."},
+  "geo_fact": {"native": "a vivid description of a region/place in that country (e.g. Bavaria, Andalusia, Hokkaido) — landscape, character and a surprising detail", "target": "..."},
+  "holiday": {"native": "a holiday or tradition celebrated around ${opts.today} — its origin, how people celebrate, and what it means (omit this field entirely if none fits)", "target": "..."}
 }
 
-Keep each item concrete, accurate and engaging.`;
+Make each paragraph accurate, specific and genuinely interesting — not generic.`;
 
   return callOpenRouter<LessonHistory>([{ type: "text", text: prompt }]);
 }

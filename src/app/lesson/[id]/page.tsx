@@ -3,18 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowLeft, Volume2, BookOpen, Wrench, Globe, Star,
-  CalendarDays, ScrollText, User, MapPin, PartyPopper,
-} from "lucide-react";
+import { ArrowLeft, Volume2, BookOpen, Wrench, Globe, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { Lesson, Bilingual, LessonHistory, PartOfSpeech } from "@/types";
+import type { Lesson, PartOfSpeech } from "@/types";
 import { BADGES, getPosPalette } from "@/lib/constants";
 import { toast } from "sonner";
 import { useLanguageTheme } from "@/hooks/useLanguageTheme";
 
-type Tab = "words" | "constructions" | "culture" | "history";
-type DisplayMode = "both" | "target"; // only used on the Almanac tab
+type Tab = "words" | "constructions" | "culture";
 
 export default function LessonPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,14 +19,8 @@ export default function LessonPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("words");
-  const [mode, setMode] = useState<DisplayMode>("both");
   const [showXpBanner, setShowXpBanner] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
-
-  // Daily almanac (fetched lazily when the tab opens)
-  const [almanac, setAlmanac] = useState<LessonHistory | null>(null);
-  const [almanacLoading, setAlmanacLoading] = useState(false);
-  const [almanacError, setAlmanacError] = useState(false);
 
   const xpEarned = parseInt(searchParams.get("xp") ?? "0");
   const newStreak = parseInt(searchParams.get("streak") ?? "0");
@@ -53,17 +43,6 @@ export default function LessonPage() {
   }, [id]);
 
   useLanguageTheme(lesson?.target_language);
-
-  // Fetch today's almanac the first time the tab is opened
-  useEffect(() => {
-    if (activeTab !== "history" || !lesson || almanac || almanacLoading || almanacError) return;
-    setAlmanacLoading(true);
-    fetch(`/api/almanac?language=${lesson.target_language}&native=${lesson.native_language}`)
-      .then((r) => r.json())
-      .then((d) => { if (d.almanac) setAlmanac(d.almanac); else setAlmanacError(true); })
-      .catch(() => setAlmanacError(true))
-      .finally(() => setAlmanacLoading(false));
-  }, [activeTab, lesson, almanac, almanacLoading, almanacError]);
 
   if (loading) {
     return (
@@ -173,16 +152,15 @@ export default function LessonPage() {
             { key: "words", icon: BookOpen, label: "Words" },
             { key: "constructions", icon: Wrench, label: "Grammar" },
             { key: "culture", icon: Globe, label: "Culture" },
-            { key: "history", icon: CalendarDays, label: "Almanac" },
           ] as const).map(({ key, icon: Icon, label }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-xl text-[11px] font-medium transition-all duration-200 ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                 activeTab === key ? "gradient-primary text-white" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon size={15} />
+              <Icon size={14} />
               {label}
             </button>
           ))}
@@ -201,27 +179,22 @@ export default function LessonPage() {
                 return (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                    className="glass rounded-2xl p-4 flex items-center gap-4"
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                    className="glass rounded-2xl p-4"
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-lg" style={{ color: s.text }}>{word.word}</span>
-                        {word.pos && word.pos !== "other" && (
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ color: s.text, backgroundColor: s.bg }}>
-                            {word.pos}
-                          </span>
-                        )}
-                        <button onClick={() => speak(word.word)} className="text-muted-foreground hover:text-primary transition-colors">
-                          <Volume2 size={14} />
-                        </button>
-                      </div>
-                      {word.pronunciation && <p className="text-xs text-muted-foreground italic">{word.pronunciation}</p>}
-                      <p className="text-sm text-muted-foreground mt-0.5">{word.translation}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-lg" style={{ color: s.text }}>{word.word}</span>
+                      {word.pos && word.pos !== "other" && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ color: s.text, backgroundColor: s.bg }}>
+                          {word.pos}
+                        </span>
+                      )}
+                      <button onClick={() => speak(word.word)} className="text-muted-foreground hover:text-primary transition-colors ml-auto">
+                        <Volume2 size={15} />
+                      </button>
                     </div>
-                    <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-white shrink-0">
-                      {i + 1}
-                    </div>
+                    {word.pronunciation && <p className="text-xs text-muted-foreground italic mt-1">{word.pronunciation}</p>}
+                    <p className="text-sm text-muted-foreground mt-0.5">{word.translation}</p>
                   </motion.div>
                 );
               })}
@@ -234,7 +207,7 @@ export default function LessonPage() {
               {lesson.constructions.map((c, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
                   className="glass rounded-2xl p-4 flex flex-col gap-2"
                 >
                   <div className="inline-flex self-start px-2 py-0.5 rounded-lg bg-primary/15 text-primary text-xs font-mono font-semibold">
@@ -256,71 +229,14 @@ export default function LessonPage() {
           {activeTab === "culture" && (
             <motion.div key="culture" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col gap-4">
               <div className="glass rounded-2xl p-5 flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">🌍</span>
-                  <h3 className="font-semibold text-base">Cultural Context</h3>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Globe size={16} />
+                  <h3 className="text-xs uppercase tracking-wider font-semibold">Cultural context</h3>
                 </div>
-                <p className="text-base leading-relaxed text-foreground/90">
+                <p className="text-[15px] leading-relaxed text-foreground/90">
                   {lesson.cultural_note ?? "No cultural note for this lesson."}
                 </p>
               </div>
-            </motion.div>
-          )}
-
-          {/* ALMANAC */}
-          {activeTab === "history" && (
-            <motion.div key="history" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col gap-4">
-              {/* Language toggle — only here */}
-              {almanac && (
-                <div className="flex justify-end">
-                  <div className="glass rounded-xl p-0.5 flex gap-0.5 text-xs">
-                    {([
-                      { key: "both", label: `${lesson.native_language.toUpperCase()}+${lesson.target_language.toUpperCase()}` },
-                      { key: "target", label: lesson.target_language.toUpperCase() },
-                    ] as const).map(({ key, label }) => (
-                      <button
-                        key={key}
-                        onClick={() => setMode(key)}
-                        className={`px-2.5 py-1 rounded-lg font-mono font-semibold transition-all ${
-                          mode === key ? "gradient-primary text-white" : "text-muted-foreground"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {almanacLoading ? (
-                <div className="glass rounded-2xl p-10 flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 rounded-full gradient-primary animate-spin glow-purple" />
-                  <p className="text-sm text-muted-foreground">Turning today&apos;s calendar page…</p>
-                </div>
-              ) : almanac ? (
-                <>
-                  <div className="glass rounded-2xl overflow-hidden">
-                    <div className="gradient-primary px-5 py-3 flex items-center gap-2 text-white">
-                      <CalendarDays size={18} />
-                      <span className="font-bold tracking-wide">{almanac.date_label}</span>
-                    </div>
-                    <div className="px-5 py-3 text-sm text-muted-foreground">
-                      A page from the calendar — discover this country&apos;s heritage.
-                    </div>
-                  </div>
-                  <AlmanacItem icon={<ScrollText size={16} />} title="On this day" value={almanac.on_this_day} mode={mode} onSpeak={speak} />
-                  <AlmanacItem icon={<User size={16} />} title="Notable figure" value={almanac.figure} mode={mode} onSpeak={speak} />
-                  <AlmanacItem icon={<MapPin size={16} />} title="Geography" value={almanac.geo_fact} mode={mode} onSpeak={speak} />
-                  {almanac.holiday && (almanac.holiday.native || almanac.holiday.target) && (
-                    <AlmanacItem icon={<PartyPopper size={16} />} title="Holiday & traditions" value={almanac.holiday} mode={mode} onSpeak={speak} />
-                  )}
-                </>
-              ) : (
-                <div className="glass rounded-2xl p-8 flex flex-col items-center gap-3 text-center">
-                  <CalendarDays size={36} className="text-muted-foreground" />
-                  <p className="text-muted-foreground text-sm">Couldn&apos;t load today&apos;s almanac. Try again in a moment.</p>
-                </div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -335,50 +251,6 @@ export default function LessonPage() {
           Done — learn something new ✨
         </button>
       </div>
-    </div>
-  );
-}
-
-/** Renders bilingual text: both = native + target underneath; target = target only. */
-function Bi({ value, mode, onSpeak }: { value: Bilingual; mode: DisplayMode; onSpeak: (t: string) => void }) {
-  const hasTarget = !!value.target?.trim();
-  const hasNative = !!value.native?.trim();
-  const showNative = mode === "both" && hasNative;
-  const showTarget = hasTarget || !hasNative;
-
-  return (
-    <div className="flex flex-col gap-2">
-      {showNative && <p className="text-base leading-relaxed text-foreground/90">{value.native}</p>}
-      {showTarget && (
-        <div className={`flex items-start gap-2 ${showNative ? "border-t border-border pt-2" : ""}`}>
-          <button onClick={() => onSpeak(value.target)} className="text-muted-foreground hover:text-primary mt-1 shrink-0">
-            <Volume2 size={14} />
-          </button>
-          <p className={`text-base leading-relaxed ${showNative ? "text-primary italic" : "text-foreground/90"}`}>
-            {value.target || value.native}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AlmanacItem({
-  icon, title, value, mode, onSpeak,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  value: Bilingual;
-  mode: DisplayMode;
-  onSpeak: (t: string) => void;
-}) {
-  return (
-    <div className="glass rounded-2xl p-4 flex flex-col gap-2">
-      <div className="flex items-center gap-2 text-primary">
-        {icon}
-        <h4 className="text-xs uppercase tracking-wider font-semibold">{title}</h4>
-      </div>
-      <Bi value={value} mode={mode} onSpeak={onSpeak} />
     </div>
   );
 }

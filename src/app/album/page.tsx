@@ -22,20 +22,21 @@ export default function AlbumPage() {
   const [total, setTotal] = useState(0);
 
   const activeLanguage = profile?.target_language;
+  const activeLevel = profile?.level;
 
   const load = useCallback(async (p = 1) => {
-    if (!activeLanguage) return;
+    if (!activeLanguage || !activeLevel) return;
     setLoading(true);
-    const res = await fetch(`/api/lessons?page=${p}&language=${activeLanguage}`);
+    const res = await fetch(`/api/lessons?page=${p}&language=${activeLanguage}&level=${activeLevel}`);
     const data = await res.json();
     if (p === 1) setLessons(data.lessons ?? []);
     else setLessons((prev) => [...prev, ...(data.lessons ?? [])]);
     setTotal(data.total ?? 0);
     setPage(p);
     setLoading(false);
-  }, [activeLanguage]);
+  }, [activeLanguage, activeLevel]);
 
-  // Reload whenever the active language changes
+  // Reload whenever the active language or level changes
   useEffect(() => { load(1); }, [load]);
 
   async function deleteLesson(id: string) {
@@ -58,7 +59,8 @@ export default function AlbumPage() {
       <div className="px-5 pt-4 pb-3">
         <h1 className="text-2xl font-bold">My Album</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
-          {LANGUAGES.find((l) => l.code === activeLanguage)?.flag} {total} {activeLanguage ? LANGUAGES.find((l) => l.code === activeLanguage)?.name : ""} lesson{total === 1 ? "" : "s"}
+          {LANGUAGES.find((l) => l.code === activeLanguage)?.flag} {total} {activeLanguage ? LANGUAGES.find((l) => l.code === activeLanguage)?.name : ""}
+          {activeLevel ? ` · ${activeLevel}` : ""} lesson{total === 1 ? "" : "s"}
         </p>
       </div>
 

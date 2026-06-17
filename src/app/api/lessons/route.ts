@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") ?? "1");
   const language = searchParams.get("language");
+  const level = searchParams.get("level");
   const limit = 12;
   const from = (page - 1) * limit;
 
@@ -17,8 +18,9 @@ export async function GET(req: NextRequest) {
     .select("*", { count: "exact" })
     .eq("user_id", user.id);
 
-  // Album & history are scoped to the currently active language
+  // Album & history are scoped to the currently active language + level
   if (language) query = query.eq("target_language", language);
+  if (level) query = query.eq("level", level);
 
   const { data, error, count } = await query
     .order("created_at", { ascending: false })
