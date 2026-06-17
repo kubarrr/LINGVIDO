@@ -112,7 +112,7 @@ export default function HomePage() {
       <div className="px-5 pt-4 pb-2 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            <span style={{ background: "linear-gradient(135deg, oklch(0.62 0.22 280), oklch(0.72 0.18 310))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <span style={{ background: "linear-gradient(135deg, var(--lang-from), var(--lang-to))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               Lingvido
             </span>
           </h1>

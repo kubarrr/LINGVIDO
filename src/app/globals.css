@@ -53,6 +53,8 @@
   --lang-from: oklch(0.62 0.22 280);
   --lang-to: oklch(0.72 0.18 310);
   --lang-glow: oklch(0.62 0.22 280 / 0.45);
+  --glass-bg: oklch(0.1 0.018 270 / 0.85);
+  --glass-border: oklch(0.62 0.22 280 / 0.15);
 
   --background: oklch(0.07 0.015 270);
   --foreground: oklch(0.96 0.005 270);
@@ -112,10 +114,10 @@
 
 /* Glass card */
 .glass {
-  background: oklch(0.1 0.018 270 / 0.85);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid oklch(0.62 0.22 280 / 0.15);
+  border: 1px solid var(--glass-border);
 }
 
 /* Gradients */
@@ -141,10 +143,19 @@
 }
 
 /* Smooth recolour when the language theme changes */
+body,
+.glass,
 .gradient-primary,
 .glow-purple,
+[class*="bg-background"],
+[class*="bg-card"],
+[class*="bg-secondary"],
+[class*="bg-muted"],
 [class*="bg-primary"],
+[class*="text-foreground"],
+[class*="text-muted"],
 [class*="text-primary"],
+[class*="border-border"],
 [class*="border-primary"] {
   transition: background-color 0.45s ease, background-image 0.45s ease,
     box-shadow 0.45s ease, color 0.3s ease, border-color 0.3s ease;
@@ -157,9 +168,9 @@
 }
 
 @keyframes cameraPulse {
-  0% { box-shadow: 0 0 0 0 oklch(0.62 0.22 280 / 0.5); }
-  70% { box-shadow: 0 0 0 24px oklch(0.62 0.22 280 / 0); }
-  100% { box-shadow: 0 0 0 0 oklch(0.62 0.22 280 / 0); }
+  0% { box-shadow: 0 0 0 0 var(--lang-glow); }
+  70% { box-shadow: 0 0 0 24px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 @keyframes flicker {
@@ -181,7 +192,7 @@
 /* Scrollbar */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: oklch(0.2 0.025 270); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* Safe area for iOS */
 .pb-safe { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }

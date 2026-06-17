@@ -8,9 +8,13 @@ import type { Lesson } from "@/types";
 import { LANGUAGES } from "@/lib/constants";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
+import { useProfile } from "@/context/ProfileContext";
+import { useLanguageTheme } from "@/hooks/useLanguageTheme";
 
 export default function AlbumPage() {
   const router = useRouter();
+  const { profile } = useProfile();
+  useLanguageTheme(profile?.target_language);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
