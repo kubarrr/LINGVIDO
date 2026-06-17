@@ -38,6 +38,17 @@ create table public.lessons (
   created_at timestamptz not null default now()
 );
 
+-- Daily country almanac ("calendar page"), shared across users per language pair
+create table public.almanacs (
+  id uuid default uuid_generate_v4() primary key,
+  target_language text not null,
+  native_language text not null,
+  day date not null,
+  content jsonb not null,
+  created_at timestamptz not null default now(),
+  unique (target_language, native_language, day)
+);
+
 -- Indexes
 create index lessons_user_id_idx on public.lessons(user_id);
 create index lessons_created_at_idx on public.lessons(created_at desc);
@@ -46,6 +57,15 @@ create index profiles_xp_idx on public.profiles(xp desc);
 -- Row Level Security
 alter table public.profiles enable row level security;
 alter table public.lessons enable row level security;
+alter table public.almanacs enable row level security;
+
+-- Almanac policies (shared content)
+create policy "Almanacs are viewable by everyone"
+  on public.almanacs for select using (true);
+create policy "Authenticated users can insert almanacs"
+  on public.almanacs for insert with check (auth.role() = 'authenticated');
+create policy "Authenticated users can delete almanacs"
+  on public.almanacs for delete using (auth.role() = 'authenticated');
 
 -- Profiles policies
 create policy "Public profiles are viewable by everyone"

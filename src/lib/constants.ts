@@ -1,10 +1,11 @@
-import type { Language, Badge, UserProfile } from "@/types";
+import type { Language, Badge, UserProfile, PartOfSpeech } from "@/types";
 
 // Per-language app theme — a full palette drawn from each country's flag.
 // Every token recolours the whole UI (background, text, cards, borders),
 // not just accents. Built with the dark()/light() helpers below.
 export type LanguageTheme = {
   mode: "light" | "dark";
+  hue: number;
   background: string;
   foreground: string;
   card: string;
@@ -38,6 +39,7 @@ function dark(s: Seed): LanguageTheme {
   const h = s.hue;
   return {
     mode: "dark",
+    hue: h,
     background: s.background ?? `oklch(0.17 0.03 ${h})`,
     foreground: s.foreground ?? `oklch(0.97 0.012 ${h})`,
     card: s.card ?? `oklch(0.22 0.035 ${h})`,
@@ -62,6 +64,7 @@ function light(s: Seed): LanguageTheme {
   const h = s.hue;
   return {
     mode: "light",
+    hue: h,
     background: s.background ?? `oklch(0.97 0.025 ${h})`,
     foreground: s.foreground ?? `oklch(0.28 0.08 ${h})`,
     card: s.card ?? `oklch(0.995 0.006 ${h})`,
@@ -161,6 +164,28 @@ export const LANGUAGE_THEMES: Record<string, LanguageTheme> = {
     primary: "oklch(0.84 0.17 88)",
   }),
 };
+
+// Part-of-speech colours derived from each language's flag palette.
+// All hues are offset from the country's base hue, so noun/verb/etc.
+// feel "in family" with that country's colours while staying distinct.
+export function getPosPalette(code: string): Record<PartOfSpeech, { text: string; bg: string }> {
+  const t = LANGUAGE_THEMES[code] ?? LANGUAGE_THEMES.en;
+  const h = t.hue;
+  const L = t.mode === "light" ? 0.48 : 0.80; // readable on that theme's cards
+  const C = 0.15;
+  const mk = (hue: number) => ({
+    text: `oklch(${L} ${C} ${((hue % 360) + 360) % 360})`,
+    bg: `oklch(${L} ${C} ${((hue % 360) + 360) % 360} / 0.16)`,
+  });
+  return {
+    noun: mk(h),
+    verb: mk(h + 65),
+    adjective: mk(h + 140),
+    adverb: mk(h + 215),
+    phrase: mk(h + 290),
+    other: { text: t.mutedForeground, bg: "oklch(0.6 0 0 / 0.12)" },
+  };
+}
 
 export const LANGUAGES: Language[] = [
   { code: "en", name: "English", flag: "🇬🇧" },
