@@ -49,31 +49,31 @@
 }
 
 :root {
-  /* Per-language theme — overridden at runtime by useLanguageTheme */
-  --lang-from: oklch(0.62 0.22 280);
-  --lang-to: oklch(0.72 0.18 310);
-  --lang-glow: oklch(0.62 0.22 280 / 0.45);
-  --glass-bg: oklch(0.1 0.018 270 / 0.85);
-  --glass-border: oklch(0.62 0.22 280 / 0.15);
+  /* Default = English (Union Jack navy/red); overridden at runtime by useLanguageTheme */
+  --lang-from: oklch(0.50 0.20 262);
+  --lang-to: oklch(0.58 0.24 25);
+  --lang-glow: oklch(0.55 0.20 262 / 0.45);
+  --glass-bg: oklch(0.14 0.025 262 / 0.85);
+  --glass-border: oklch(0.7 0.2 262 / 0.18);
 
-  --background: oklch(0.07 0.015 270);
-  --foreground: oklch(0.96 0.005 270);
-  --card: oklch(0.1 0.018 270);
-  --card-foreground: oklch(0.96 0.005 270);
-  --popover: oklch(0.1 0.018 270);
-  --popover-foreground: oklch(0.96 0.005 270);
-  --primary: oklch(0.62 0.22 280);
+  --background: oklch(0.15 0.055 262);
+  --foreground: oklch(0.96 0.012 262);
+  --card: oklch(0.19 0.06 262);
+  --card-foreground: oklch(0.96 0.012 262);
+  --popover: oklch(0.19 0.06 262);
+  --popover-foreground: oklch(0.96 0.012 262);
+  --primary: oklch(0.62 0.22 25);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.14 0.02 270);
-  --secondary-foreground: oklch(0.7 0.01 270);
-  --muted: oklch(0.14 0.02 270);
-  --muted-foreground: oklch(0.5 0.01 270);
-  --accent: oklch(0.18 0.025 270);
-  --accent-foreground: oklch(0.96 0.005 270);
+  --secondary: oklch(0.18 0.03 262);
+  --secondary-foreground: oklch(0.74 0.02 262);
+  --muted: oklch(0.18 0.03 262);
+  --muted-foreground: oklch(0.64 0.03 262);
+  --accent: oklch(0.23 0.035 262);
+  --accent-foreground: oklch(0.96 0.012 262);
   --destructive: oklch(0.65 0.22 25);
-  --border: oklch(0.2 0.025 270);
-  --input: oklch(0.14 0.02 270);
-  --ring: oklch(0.62 0.22 280);
+  --border: oklch(0.26 0.035 262);
+  --input: oklch(0.18 0.03 262);
+  --ring: oklch(0.62 0.22 25);
   --radius: 0.875rem;
   --sidebar: oklch(0.1 0.018 270);
   --sidebar-foreground: oklch(0.96 0.005 270);

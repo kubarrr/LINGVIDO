@@ -129,9 +129,19 @@ export default function LessonPage() {
         )}
       </AnimatePresence>
 
-      {/* Header with image */}
+      {/* Header — image when available, otherwise a tinted panel for text/voice */}
       <div className="relative h-56 overflow-hidden">
-        <img src={lesson.image_url} alt={lesson.object_detected} className="w-full h-full object-cover" />
+        {lesson.image_url ? (
+          <img src={lesson.image_url} alt={lesson.object_detected} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full gradient-primary flex items-end">
+            {lesson.user_input && (
+              <p className="text-white/90 text-sm italic leading-snug px-5 pb-20 line-clamp-3">
+                “{lesson.user_input}”
+              </p>
+            )}
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <button
           onClick={() => router.back()}
@@ -141,7 +151,9 @@ export default function LessonPage() {
         </button>
         <div className="absolute bottom-4 left-5 right-5">
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Lesson about</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              {lesson.input_type === "voice" ? "Voice lesson about" : lesson.input_type === "text" ? "Text lesson about" : "Lesson about"}
+            </span>
           </div>
           <h1 className="text-2xl font-bold capitalize">{lesson.object_detected}</h1>
         </div>

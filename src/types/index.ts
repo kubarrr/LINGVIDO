@@ -23,11 +23,15 @@ export type LessonConstruction = {
   translation: string;
 };
 
+export type LessonInputType = "photo" | "voice" | "text";
+
 export type Lesson = {
   id: string;
   user_id: string;
   created_at: string;
-  image_url: string;
+  image_url: string | null;
+  user_input?: string | null;
+  input_type: LessonInputType;
   object_detected: string;
   target_language: string;
   native_language: string;

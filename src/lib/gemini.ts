@@ -16,21 +16,50 @@ const MODELS = [
   "google/gemma-3n-e4b-it:free",
 ];
 
-export async function analyzImageAndGenerateLesson(
-  imageBase64: string,
-  mimeType: string,
-  targetLanguage: string,
-  nativeLanguage: string,
-  level: LanguageLevel
-): Promise<GeneratedLesson> {
+export type LessonInput = {
+  imageBase64?: string;
+  mimeType?: string;
+  userText?: string;
+  targetLanguage: string;
+  nativeLanguage: string;
+  level: LanguageLevel;
+  /** Topics already covered for this user+language — avoid repeating them. */
+  avoidTopics?: string[];
+};
+
+export async function generateLesson(input: LessonInput): Promise<GeneratedLesson> {
+  const { imageBase64, mimeType, userText, targetLanguage, nativeLanguage, level, avoidTopics = [] } = input;
   const targetLang = LANGUAGES.find((l) => l.code === targetLanguage)?.name ?? targetLanguage;
   const nativeLang = LANGUAGES.find((l) => l.code === nativeLanguage)?.name ?? nativeLanguage;
 
-  const prompt = `You are an engaging language teacher. Analyze this image and create a rich, interesting language lesson in ${targetLang} for a ${level} level student whose native language is ${nativeLang}.
+  const hasImage = !!imageBase64;
+  const hasText = !!userText?.trim();
+
+  // What is the lesson based on?
+  const sourceDescription = hasImage && hasText
+    ? "the photo AND the note the learner wrote below"
+    : hasImage
+    ? "the photo"
+    : "the note the learner wrote below";
+
+  const avoidBlock = avoidTopics.length > 0
+    ? `\nThe learner has RECENTLY had lessons about these topics — do NOT pick any of them again, choose something fresh:\n${avoidTopics.map((t) => `- ${t}`).join("\n")}\n`
+    : "";
+
+  const userTextBlock = hasText
+    ? `\nThe learner's note: "${userText!.trim()}"\n`
+    : "";
+
+  const prompt = `You are an engaging, creative language teacher. Based on ${sourceDescription}, create a rich, interesting micro-lesson in ${targetLang} for a ${level} level student whose native language is ${nativeLang}.
+${userTextBlock}${avoidBlock}
+CHOOSING THE TOPIC (very important):
+- Pick a SPECIFIC, vivid, non-obvious focal point — a particular object, detail, action, material, or scene.
+- NEVER choose generic catch-all words like "person", "man", "woman", "people", "human", "thing", "object", "background". If a person is present, focus instead on what they are doing, wearing, holding, or their surroundings (e.g. "street musician", "knitted scarf", "morning commute").
+- Prefer something that yields interesting vocabulary and a good cultural note.
 
 Respond ONLY with a valid JSON object in this exact format:
 {
-  "object_detected": "main subject of the image in English (1-3 words)",
+  "object_detected": "the chosen specific topic in English (1-3 words, NOT a generic word)",
   "words": [
     {"word": "word in ${targetLang}", "translation": "translation in ${nativeLang}", "pronunciation": "phonetic pronunciation if useful"},
     {"word": "...", "translation": "...", "pronunciation": "..."},
@@ -45,10 +74,17 @@ Respond ONLY with a valid JSON object in this exact format:
 }
 
 Rules:
-- Choose exactly 4 words most relevant to what you see in the image, appropriate for ${level} level
+- Choose exactly 4 words most relevant to the chosen topic, appropriate for ${level} level
 - Constructions should use vocabulary from the words list
 - Cultural note must be genuinely insightful, 4-5 sentences minimum
 - All content must be accurate`;
+
+  // Build the multimodal message content (OpenRouter / OpenAI-compatible)
+  const content: Array<Record<string, unknown>> = [];
+  if (hasImage) {
+    content.push({ type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } });
+  }
+  content.push({ type: "text", text: prompt });
 
   const errors: string[] = [];
 
@@ -64,18 +100,7 @@ Rules:
         },
         body: JSON.stringify({
           model,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "image_url",
-                  image_url: { url: `data:${mimeType};base64,${imageBase64}` },
-                },
-                { type: "text", text: prompt },
-              ],
-            },
-          ],
+          messages: [{ role: "user", content }],
         }),
       });
 

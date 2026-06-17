@@ -8,13 +8,19 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") ?? "1");
+  const language = searchParams.get("language");
   const limit = 12;
   const from = (page - 1) * limit;
 
-  const { data, error, count } = await supabase
+  let query = supabase
     .from("lessons")
     .select("*", { count: "exact" })
-    .eq("user_id", user.id)
+    .eq("user_id", user.id);
+
+  // Album & history are scoped to the currently active language
+  if (language) query = query.eq("target_language", language);
+
+  const { data, error, count } = await query
     .order("created_at", { ascending: false })
     .range(from, from + limit - 1);
 

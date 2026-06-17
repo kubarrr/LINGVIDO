@@ -2,21 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, Flame, Zap, BookOpen } from "lucide-react";
+import { Settings, Flame, Zap, BookOpen, Check, Plus } from "lucide-react";
 import { useProfile } from "@/context/ProfileContext";
 import { BADGES, LANGUAGES, getUserAppLevel } from "@/lib/constants";
-import type { LeaderboardEntry } from "@/types";
+import type { LeaderboardEntry, LanguagePair } from "@/types";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import { useLanguageTheme } from "@/hooks/useLanguageTheme";
 
 export default function ProfilePage() {
-  const { profile } = useProfile();
+  const { profile, refresh } = useProfile();
   const router = useRouter();
   const [tab, setTab] = useState<"badges" | "leaderboard">("badges");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingBoard, setLoadingBoard] = useState(false);
+  const [switching, setSwitching] = useState(false);
   useLanguageTheme(profile?.target_language);
 
   useEffect(() => {
@@ -35,7 +36,38 @@ export default function ProfilePage() {
     router.push("/auth");
   }
 
+  async function switchLanguage(code: string) {
+    if (!profile || code === profile.target_language || switching) return;
+    // Build the full deduped set of configured languages
+    const seen = new Set<string>();
+    const all: LanguagePair[] = [
+      { language: profile.target_language, level: profile.level },
+      ...(profile.language_pairs ?? []),
+    ].filter((p) => (seen.has(p.language) ? false : (seen.add(p.language), true)));
+
+    const chosen = all.find((p) => p.language === code);
+    if (!chosen) return;
+    // New active = chosen; keep everything else (incl. old active) as extras
+    const newPairs = all.filter((p) => p.language !== code);
+
+    setSwitching(true);
+    await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_language: code, level: chosen.level, language_pairs: newPairs }),
+    });
+    await refresh();
+    setSwitching(false);
+  }
+
   if (!profile) return null;
+
+  // Full set of languages this user is learning (active first)
+  const seen = new Set<string>();
+  const myLanguages: LanguagePair[] = [
+    { language: profile.target_language, level: profile.level },
+    ...(profile.language_pairs ?? []),
+  ].filter((p) => (seen.has(p.language) ? false : (seen.add(p.language), true)));
 
   const appLevel = getUserAppLevel(profile.xp);
   const targetLang = LANGUAGES.find((l) => l.code === profile.target_language);
@@ -94,6 +126,41 @@ export default function ProfilePage() {
             <StatCard icon={<Zap size={18} className="text-yellow-400" />} value={profile.xp} label="XP" />
             <StatCard icon={<BookOpen size={18} className="text-primary" />} value={profile.lessons_count} label="Lessons" />
           </div>
+        </div>
+      </div>
+
+      {/* My languages — tap to switch the active one (snaps & album follow it) */}
+      <div className="px-5 pb-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">My languages</p>
+          <button onClick={() => router.push("/settings")} className="text-xs text-primary flex items-center gap-1">
+            <Plus size={13} /> Manage
+          </button>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {myLanguages.map((pair) => {
+            const lang = LANGUAGES.find((l) => l.code === pair.language);
+            const active = pair.language === profile.target_language;
+            return (
+              <button
+                key={pair.language}
+                onClick={() => switchLanguage(pair.language)}
+                disabled={switching}
+                className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-sm transition-all disabled:opacity-60 ${
+                  active
+                    ? "gradient-primary text-white border-transparent glow-purple"
+                    : "glass border-border text-foreground hover:border-primary/50"
+                }`}
+              >
+                <span className="text-lg">{lang?.flag}</span>
+                <span className="font-medium">{lang?.name}</span>
+                <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${active ? "bg-white/20" : "bg-primary/15 text-primary"}`}>
+                  {pair.level}
+                </span>
+                {active && <Check size={14} />}
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Search, Trash2, BookOpen } from "lucide-react";
+import { Search, Trash2, BookOpen, Mic, Type } from "lucide-react";
 import type { Lesson } from "@/types";
 import { LANGUAGES } from "@/lib/constants";
 import { toast } from "sonner";
@@ -21,17 +21,21 @@ export default function AlbumPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
+  const activeLanguage = profile?.target_language;
+
   const load = useCallback(async (p = 1) => {
+    if (!activeLanguage) return;
     setLoading(true);
-    const res = await fetch(`/api/lessons?page=${p}`);
+    const res = await fetch(`/api/lessons?page=${p}&language=${activeLanguage}`);
     const data = await res.json();
     if (p === 1) setLessons(data.lessons ?? []);
     else setLessons((prev) => [...prev, ...(data.lessons ?? [])]);
     setTotal(data.total ?? 0);
     setPage(p);
     setLoading(false);
-  }, []);
+  }, [activeLanguage]);
 
+  // Reload whenever the active language changes
   useEffect(() => { load(1); }, [load]);
 
   async function deleteLesson(id: string) {
@@ -53,7 +57,9 @@ export default function AlbumPage() {
     <div className="flex flex-col min-h-dvh pt-safe">
       <div className="px-5 pt-4 pb-3">
         <h1 className="text-2xl font-bold">My Album</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">{total} lessons captured</p>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          {LANGUAGES.find((l) => l.code === activeLanguage)?.flag} {total} {activeLanguage ? LANGUAGES.find((l) => l.code === activeLanguage)?.name : ""} lesson{total === 1 ? "" : "s"}
+        </p>
       </div>
 
       <div className="px-5 pb-4">
@@ -131,6 +137,7 @@ function LessonCard({
 }) {
   const lang = LANGUAGES.find((l) => l.code === lesson.target_language);
   const date = new Date(lesson.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const hasImage = !!lesson.image_url;
 
   return (
     <motion.div
@@ -140,16 +147,36 @@ function LessonCard({
       className="relative group rounded-2xl overflow-hidden aspect-square cursor-pointer"
       onClick={onClick}
     >
-      <img
-        src={lesson.image_url}
-        alt={lesson.object_detected}
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+      {hasImage ? (
+        <>
+          <img
+            src={lesson.image_url!}
+            alt={lesson.object_detected}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+        </>
+      ) : (
+        // Text / voice lesson — no photo, show a tinted card with the note
+        <div className="w-full h-full gradient-primary flex flex-col p-3">
+          <div className="flex items-center gap-1.5 text-white/90">
+            {lesson.input_type === "voice" ? <Mic size={14} /> : <Type size={14} />}
+            <span className="text-[10px] uppercase tracking-wider font-semibold">
+              {lesson.input_type === "voice" ? "Voice" : "Text"}
+            </span>
+          </div>
+          {lesson.user_input && (
+            <p className="text-white/85 text-xs leading-snug mt-2 line-clamp-4 italic">
+              “{lesson.user_input}”
+            </p>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-transparent to-transparent" />
+        </div>
+      )}
 
       <button
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-border"
+        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 backdrop-blur flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-border z-10"
       >
         <Trash2 size={12} className="text-destructive" />
       </button>

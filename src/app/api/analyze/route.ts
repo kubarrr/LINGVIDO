@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { analyzImageAndGenerateLesson } from "@/lib/gemini";
+import { generateLesson } from "@/lib/gemini";
 import { BADGES, XP_PER_LESSON, XP_PER_WORD, XP_STREAK_BONUS } from "@/lib/constants";
-import type { LanguageLevel, UserProfile } from "@/types";
+import type { LanguageLevel, LessonInputType, UserProfile } from "@/types";
 
 const RATE_LIMIT_PER_DAY = 20;
 
@@ -26,35 +26,61 @@ export async function POST(req: NextRequest) {
     }
 
     const formData = await req.formData();
-    const file = formData.get("image") as File;
+    const file = formData.get("image") as File | null;
+    const userText = (formData.get("text") as string | null)?.trim() || null;
+    const inputType = (formData.get("inputType") as LessonInputType) ?? "photo";
     const targetLanguage = formData.get("targetLanguage") as string;
     const nativeLanguage = formData.get("nativeLanguage") as string;
     const level = formData.get("level") as LanguageLevel;
 
-    if (!file || !targetLanguage || !nativeLanguage || !level) {
+    if (!targetLanguage || !nativeLanguage || !level) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+    if (!file && !userText) {
+      return NextResponse.json({ error: "Provide a photo or some text" }, { status: 400 });
+    }
 
-    // Convert file to base64
-    const bytes = await file.arrayBuffer();
-    const base64 = Buffer.from(bytes).toString("base64");
+    // Convert image (if any) to base64
+    let base64: string | undefined;
+    if (file) {
+      const bytes = await file.arrayBuffer();
+      base64 = Buffer.from(bytes).toString("base64");
+    }
 
-    // Generate lesson with Gemini
-    const lessonData = await analyzImageAndGenerateLesson(
-      base64, file.type, targetLanguage, nativeLanguage, level
-    );
+    // Gather recently covered topics for this language so the model picks
+    // something fresh instead of repeating "person", "tree", etc.
+    const { data: recent } = await supabase
+      .from("lessons")
+      .select("object_detected")
+      .eq("user_id", user.id)
+      .eq("target_language", targetLanguage)
+      .order("created_at", { ascending: false })
+      .limit(15);
+    const avoidTopics = (recent ?? [])
+      .map((r) => r.object_detected as string)
+      .filter(Boolean);
 
-    // Upload image to Supabase Storage
-    const fileName = `${user.id}/${Date.now()}.${file.type.split("/")[1]}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("lesson-images")
-      .upload(fileName, file, { contentType: file.type });
+    // Generate lesson via OpenRouter
+    const lessonData = await generateLesson({
+      imageBase64: base64,
+      mimeType: file?.type,
+      userText: userText ?? undefined,
+      targetLanguage,
+      nativeLanguage,
+      level,
+      avoidTopics,
+    });
 
-    if (uploadError) throw uploadError;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from("lesson-images")
-      .getPublicUrl(uploadData.path);
+    // Upload image to Supabase Storage (only when a photo was provided)
+    let publicUrl: string | null = null;
+    if (file && base64) {
+      const fileName = `${user.id}/${Date.now()}.${file.type.split("/")[1]}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("lesson-images")
+        .upload(fileName, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+      publicUrl = supabase.storage.from("lesson-images").getPublicUrl(uploadData.path).data.publicUrl;
+    }
 
     // Calculate XP
     const xpEarned = XP_PER_LESSON + lessonData.words.length * XP_PER_WORD;
@@ -65,6 +91,8 @@ export async function POST(req: NextRequest) {
       .insert({
         user_id: user.id,
         image_url: publicUrl,
+        user_input: userText,
+        input_type: inputType,
         object_detected: lessonData.object_detected,
         target_language: targetLanguage,
         native_language: nativeLanguage,

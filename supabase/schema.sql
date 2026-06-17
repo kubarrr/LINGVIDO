@@ -9,6 +9,7 @@ create table public.profiles (
   target_language text not null default 'en',
   native_language text not null default 'pl',
   level text not null default 'A1',
+  language_pairs jsonb not null default '[]',
   xp integer not null default 0,
   streak integer not null default 0,
   last_lesson_at timestamptz,
@@ -22,7 +23,9 @@ create table public.profiles (
 create table public.lessons (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
-  image_url text not null,
+  image_url text,
+  user_input text,
+  input_type text not null default 'photo',
   object_detected text not null,
   target_language text not null,
   native_language text not null,

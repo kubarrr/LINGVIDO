@@ -83,8 +83,12 @@ function light(s: Seed): LanguageTheme {
 }
 
 export const LANGUAGE_THEMES: Record<string, LanguageTheme> = {
-  // English — brand purple (dark)
-  en: dark({ hue: 285, from: "oklch(0.62 0.22 280)", to: "oklch(0.72 0.18 310)", primary: "oklch(0.66 0.20 285)" }),
+  // English — Union Jack: navy background, white text, red & blue accents (dark)
+  en: dark({
+    hue: 262, from: "oklch(0.50 0.20 262)", to: "oklch(0.58 0.24 25)",
+    background: "oklch(0.15 0.055 262)", card: "oklch(0.19 0.06 262)",
+    primary: "oklch(0.62 0.22 25)",
+  }),
   // Spanish — yellow background, red text & accents (light)
   es: light({
     hue: 40, from: "oklch(0.58 0.23 28)", to: "oklch(0.80 0.17 85)",
