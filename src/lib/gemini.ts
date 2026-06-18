@@ -13,9 +13,9 @@ type GeneratedLesson = {
 // in your environment. Cheap paid models are kept as reliable fallbacks for
 // when the free tier is rate-limited or unavailable.
 const DEFAULT_MODELS = [
-  "nex-agi/nex-n2-pro:free",      // free (1000/day once a few credits are added)
-  "google/gemini-2.0-flash-001",  // very cheap, strong vision — reliable fallback
-  "openai/gpt-4o-mini",           // cheap vision — secondary fallback
+  "nex-agi/nex-n2-pro:free",      // primary: free (1000/day with credits added)
+  "google/gemini-2.0-flash-001",  // paid fallback: fast & cheap when free fails
+  "openai/gpt-4o-mini",           // secondary paid fallback
 ];
 
 const MODELS = (process.env.OPENROUTER_MODELS?.split(",").map((s) => s.trim()).filter(Boolean)) ?? DEFAULT_MODELS;
