@@ -106,7 +106,7 @@ CHOOSING THE TOPIC (very important):
 
 Respond ONLY with a valid JSON object in this exact format:
 {
-  "object_detected": "the chosen specific topic in English (1-3 words, NOT a generic word)",
+  "object_detected": "the chosen specific topic written IN ${targetLang} (1-3 words, NOT a generic word)",
   "words": [
     {"word": "word in ${targetLang}", "translation": "translation in ${nativeLang}", "pronunciation": "phonetic pronunciation if useful", "pos": "noun|verb|adjective|adverb|phrase|other"},
     {"word": "...", "translation": "...", "pronunciation": "...", "pos": "..."}
