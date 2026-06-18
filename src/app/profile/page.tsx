@@ -14,7 +14,7 @@ import { useLanguageTheme } from "@/hooks/useLanguageTheme";
 type Period = "daily" | "weekly" | "all";
 
 export default function ProfilePage() {
-  const { profile, refresh } = useProfile();
+  const { profile, loading, refresh } = useProfile();
   const router = useRouter();
   const [period, setPeriod] = useState<Period>("daily");
   const [board, setBoard] = useState<QuizLeaderboardEntry[]>([]);
@@ -58,7 +58,33 @@ export default function ProfilePage() {
     setSwitching(false);
   }
 
-  if (!profile) return null;
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-dvh">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full gradient-primary animate-spin glow-purple" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex flex-col min-h-dvh">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <p className="text-muted-foreground">Couldn&apos;t load your profile.</p>
+          <button onClick={() => refresh()} className="px-5 py-2.5 rounded-xl gradient-primary text-white font-medium">
+            Retry
+          </button>
+          <button onClick={() => router.push("/auth")} className="text-primary text-sm underline">
+            Sign in again
+          </button>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
 
   const seen = new Set<string>();
   const myLanguages: LanguagePair[] = [

@@ -8,13 +8,17 @@ type GeneratedLesson = {
   cultural_note: string;
 };
 
-// Free models on OpenRouter — tries each in order until one succeeds
-const MODELS = [
-  "nex-agi/nex-n2-pro:free",
-  "google/gemma-3-27b-it:free",
-  "google/gemma-3-12b-it:free",
-  "google/gemma-3n-e4b-it:free",
+// Vision-capable models on OpenRouter, tried in order until one succeeds.
+// Override without a redeploy by setting OPENROUTER_MODELS (comma-separated)
+// in your environment. Cheap paid models are kept as reliable fallbacks for
+// when the free tier is rate-limited or unavailable.
+const DEFAULT_MODELS = [
+  "nex-agi/nex-n2-pro:free",      // free (1000/day once a few credits are added)
+  "google/gemini-2.0-flash-001",  // very cheap, strong vision — reliable fallback
+  "openai/gpt-4o-mini",           // cheap vision — secondary fallback
 ];
+
+const MODELS = (process.env.OPENROUTER_MODELS?.split(",").map((s) => s.trim()).filter(Boolean)) ?? DEFAULT_MODELS;
 
 // Shared OpenRouter caller — returns the first model's parsed JSON object
 async function callOpenRouter<T>(content: Array<Record<string, unknown>>): Promise<T> {
