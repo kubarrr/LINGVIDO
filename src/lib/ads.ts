@@ -2,10 +2,14 @@
 // do anything inside the native Capacitor app, so the same code runs everywhere.
 import { Capacitor } from "@capacitor/core";
 
-// Google's official TEST interstitial id. Replace via env with your real unit
-// id for production: NEXT_PUBLIC_ADMOB_INTERSTITIAL_ID
+// Real Lingvido interstitial unit (overridable via env).
 const INTERSTITIAL_ID =
-  process.env.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ID ?? "ca-app-pub-3940256099942544/1033173712";
+  process.env.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ID ?? "ca-app-pub-7900523510655820/3348535874";
+
+// Safe default: serve TEST ads. Only set NEXT_PUBLIC_ADMOB_TESTING="false"
+// in production once the app is live and reviewed — clicking your own real
+// ads gets your AdMob account banned.
+const IS_TESTING = process.env.NEXT_PUBLIC_ADMOB_TESTING !== "false";
 
 function isNative() {
   return Capacitor.getPlatform() !== "web";
@@ -32,7 +36,7 @@ export async function showInterstitial() {
   if (!isNative()) return;
   try {
     const { AdMob } = await import("@capacitor-community/admob");
-    await AdMob.prepareInterstitial({ adId: INTERSTITIAL_ID });
+    await AdMob.prepareInterstitial({ adId: INTERSTITIAL_ID, isTesting: IS_TESTING });
     await AdMob.showInterstitial();
   } catch {
     /* ignore failures so generation still completes */
