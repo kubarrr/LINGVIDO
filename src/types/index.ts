@@ -91,6 +91,22 @@ export type LeaderboardEntry = {
   rank: number;
 };
 
+export type QuizQuestion = {
+  question: string;
+  options: string[];
+  correct: number; // 0-based index
+  category: "history" | "figure" | "vocab" | "general" | string;
+};
+
+export type Quiz = { questions: QuizQuestion[] };
+
+export type QuizLeaderboardEntry = {
+  username: string;
+  avatar_url?: string;
+  xp: number;
+  rank: number;
+};
+
 export type Badge = {
   id: string;
   name: string;

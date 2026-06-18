@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CalendarDays, ScrollText, User, MapPin, PartyPopper, Volume2 } from "lucide-react";
+import { CalendarDays, ScrollText, User, MapPin, Volume2 } from "lucide-react";
 import { useProfile } from "@/context/ProfileContext";
 import { useLanguageTheme } from "@/hooks/useLanguageTheme";
 import { LANGUAGES } from "@/lib/constants";
@@ -15,7 +15,6 @@ export default function AlmanacPage() {
   const { profile } = useProfile();
   const [almanac, setAlmanac] = useState<LessonHistory | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [mode, setMode] = useState<DisplayMode>("both");
 
   const target = profile?.target_language;
@@ -26,12 +25,11 @@ export default function AlmanacPage() {
   useEffect(() => {
     if (!target || !native) return;
     setLoading(true);
-    setError(false);
     setAlmanac(null);
     fetch(`/api/almanac?language=${target}&native=${native}`)
       .then((r) => r.json())
-      .then((d) => { if (d.almanac) setAlmanac(d.almanac); else setError(true); })
-      .catch(() => setError(true))
+      .then((d) => { if (d.almanac) setAlmanac(d.almanac); })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [target, native]);
 
@@ -95,9 +93,6 @@ export default function AlmanacPage() {
             <Item index={0} icon={<ScrollText size={16} />} title="On this day" value={almanac.on_this_day} mode={mode} onSpeak={speak} />
             <Item index={1} icon={<User size={16} />} title="Notable figure" value={almanac.figure} mode={mode} onSpeak={speak} />
             <Item index={2} icon={<MapPin size={16} />} title="Geography" value={almanac.geo_fact} mode={mode} onSpeak={speak} />
-            {almanac.holiday && (almanac.holiday.native || almanac.holiday.target) && (
-              <Item index={3} icon={<PartyPopper size={16} />} title="Holiday & traditions" value={almanac.holiday} mode={mode} onSpeak={speak} />
-            )}
           </>
         ) : (
           <div className="glass rounded-2xl p-8 flex flex-col items-center gap-3 text-center">

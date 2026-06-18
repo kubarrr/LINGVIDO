@@ -146,7 +146,7 @@ function LessonCard({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.04 }}
-      className="relative group rounded-2xl overflow-hidden aspect-square cursor-pointer"
+      className="relative group rounded-2xl overflow-hidden aspect-[3/4] cursor-pointer"
       onClick={onClick}
     >
       {hasImage ? (
@@ -156,7 +156,8 @@ function LessonCard({
             alt={lesson.object_detected}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+          {/* Light gradient confined to the bottom so the photo stays visible */}
+          <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-background/95 to-transparent" />
         </>
       ) : (
         // Text / voice lesson — no photo, show a tinted card with the note
@@ -183,18 +184,11 @@ function LessonCard({
         <Trash2 size={12} className="text-destructive" />
       </button>
 
-      <div className="absolute bottom-0 left-0 right-0 p-3">
-        <p className="text-xs font-bold capitalize leading-tight truncate">{lesson.object_detected}</p>
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-xs text-muted-foreground">{date}</span>
+      <div className="absolute bottom-0 left-0 right-0 p-2.5">
+        <p className="text-sm font-bold capitalize leading-tight truncate drop-shadow">{lesson.object_detected}</p>
+        <div className="flex items-center justify-between mt-0.5">
+          <span className="text-[11px] text-foreground/70">{date}</span>
           <span className="text-xs">{lang?.flag}</span>
-        </div>
-        <div className="flex gap-1 mt-1.5 flex-wrap">
-          {lesson.words.slice(0, 2).map((w, i) => (
-            <span key={i} className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-md">
-              {w.word}
-            </span>
-          ))}
         </div>
       </div>
     </motion.div>

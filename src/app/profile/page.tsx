@@ -2,33 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, Flame, Zap, BookOpen, Check, Plus } from "lucide-react";
+import { Settings, Flame, Zap, BookOpen, Check, Plus, Trophy } from "lucide-react";
 import { useProfile } from "@/context/ProfileContext";
-import { BADGES, LANGUAGES, getUserAppLevel } from "@/lib/constants";
-import type { LeaderboardEntry, LanguagePair } from "@/types";
+import { LANGUAGES, getUserAppLevel } from "@/lib/constants";
+import type { QuizLeaderboardEntry, LanguagePair } from "@/types";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import { useLanguageTheme } from "@/hooks/useLanguageTheme";
 
+type Period = "daily" | "weekly" | "all";
+
 export default function ProfilePage() {
   const { profile, refresh } = useProfile();
   const router = useRouter();
-  const [tab, setTab] = useState<"badges" | "leaderboard">("badges");
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [period, setPeriod] = useState<Period>("daily");
+  const [board, setBoard] = useState<QuizLeaderboardEntry[]>([]);
   const [loadingBoard, setLoadingBoard] = useState(false);
   const [switching, setSwitching] = useState(false);
   useLanguageTheme(profile?.target_language);
 
   useEffect(() => {
-    if (tab === "leaderboard" && leaderboard.length === 0) {
-      setLoadingBoard(true);
-      fetch("/api/leaderboard")
-        .then((r) => r.json())
-        .then(setLeaderboard)
-        .finally(() => setLoadingBoard(false));
-    }
-  }, [tab, leaderboard.length]);
+    setLoadingBoard(true);
+    fetch(`/api/quiz-leaderboard?period=${period}`)
+      .then((r) => r.json())
+      .then((d) => setBoard(d.entries ?? []))
+      .finally(() => setLoadingBoard(false));
+  }, [period]);
 
   async function signOut() {
     const supabase = createClient();
@@ -38,7 +38,6 @@ export default function ProfilePage() {
 
   async function switchLanguage(code: string) {
     if (!profile || code === profile.target_language || switching) return;
-    // Build the full deduped set of configured languages
     const seen = new Set<string>();
     const all: LanguagePair[] = [
       { language: profile.target_language, level: profile.level },
@@ -47,7 +46,6 @@ export default function ProfilePage() {
 
     const chosen = all.find((p) => p.language === code);
     if (!chosen) return;
-    // New active = chosen; keep everything else (incl. old active) as extras
     const newPairs = all.filter((p) => p.language !== code);
 
     setSwitching(true);
@@ -62,7 +60,6 @@ export default function ProfilePage() {
 
   if (!profile) return null;
 
-  // Full set of languages this user is learning (active first)
   const seen = new Set<string>();
   const myLanguages: LanguagePair[] = [
     { language: profile.target_language, level: profile.level },
@@ -71,8 +68,6 @@ export default function ProfilePage() {
 
   const appLevel = getUserAppLevel(profile.xp);
   const targetLang = LANGUAGES.find((l) => l.code === profile.target_language);
-  const earnedBadges = BADGES.filter((b) => profile.badges.includes(b.id));
-  const lockedBadges = BADGES.filter((b) => !profile.badges.includes(b.id));
 
   return (
     <div className="flex flex-col min-h-dvh pt-safe page-enter">
@@ -105,7 +100,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* XP bar */}
+          {/* XP bar (global across all languages & levels) */}
           <div>
             <div className="flex justify-between text-xs mb-1.5">
               <span className="text-muted-foreground font-medium">{appLevel.name}</span>
@@ -164,116 +159,79 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="px-5 pb-4">
+      {/* Quiz ranking (all languages & levels combined) */}
+      <div className="px-5 pb-2 flex items-center gap-2">
+        <Trophy size={16} className="text-yellow-400" />
+        <h2 className="text-sm font-bold">Quiz ranking</h2>
+      </div>
+      <div className="px-5 pb-3">
         <div className="glass rounded-2xl p-1 flex gap-1">
-          {(["badges", "leaderboard"] as const).map((t) => (
+          {([
+            { key: "daily", label: "Today" },
+            { key: "weekly", label: "This week" },
+            { key: "all", label: "All time" },
+          ] as const).map(({ key, label }) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                tab === t ? "gradient-primary text-white" : "text-muted-foreground"
+              key={key}
+              onClick={() => setPeriod(key)}
+              className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                period === key ? "gradient-primary text-white" : "text-muted-foreground"
               }`}
             >
-              {t === "leaderboard" ? "🏆 Ranking" : "🎖️ Badges"}
+              {label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Content */}
+      {/* Ranking list */}
       <div className="flex-1 px-5 pb-24">
-        {tab === "badges" && (
-          <div className="flex flex-col gap-4">
-            {earnedBadges.length > 0 && (
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">Earned</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {earnedBadges.map((badge, i) => (
-                    <motion.div
-                      key={badge.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.07 }}
-                      className="glass rounded-2xl p-4 flex items-center gap-3 border border-primary/20"
-                    >
-                      <span className="text-2xl">{badge.icon}</span>
-                      <div>
-                        <p className="text-sm font-semibold leading-tight">{badge.name}</p>
-                        <p className="text-xs text-muted-foreground">{badge.description}</p>
-                      </div>
-                    </motion.div>
-                  ))}
+        <div className="flex flex-col gap-2">
+          {loadingBoard ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-14 rounded-2xl bg-card animate-pulse" />
+            ))
+          ) : board.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground text-sm">
+              No quiz scores yet. Be the first — play today&apos;s quiz! 🧠
+            </div>
+          ) : (
+            board.map((entry, i) => (
+              <motion.div
+                key={entry.username + i}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04 }}
+                className={`glass rounded-2xl p-4 flex items-center gap-3 ${
+                  entry.username === profile.username ? "border border-primary/40 glow-purple" : ""
+                }`}
+              >
+                <div className={`w-8 text-center font-bold text-sm ${
+                  i === 0 ? "text-yellow-400" : i === 1 ? "text-slate-300" : i === 2 ? "text-amber-600" : "text-muted-foreground"
+                }`}>
+                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
                 </div>
-              </div>
-            )}
-
-            {lockedBadges.length > 0 && (
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">Locked</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {lockedBadges.map((badge) => (
-                    <div key={badge.id} className="rounded-2xl p-4 flex items-center gap-3 border border-border opacity-40">
-                      <span className="text-2xl grayscale">{badge.icon}</span>
-                      <div>
-                        <p className="text-sm font-semibold leading-tight">{badge.name}</p>
-                        <p className="text-xs text-muted-foreground">{badge.description}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center text-sm font-bold text-white shrink-0">
+                  {entry.username.charAt(0).toUpperCase()}
                 </div>
-              </div>
-            )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{entry.username}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-yellow-400">{entry.xp}</p>
+                  <p className="text-xs text-muted-foreground">XP</p>
+                </div>
+              </motion.div>
+            ))
+          )}
 
-            <button
-              onClick={signOut}
-              className="w-full py-3 rounded-2xl border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors mt-2"
-            >
-              Sign out
-            </button>
-          </div>
-        )}
-
-        {tab === "leaderboard" && (
-          <div className="flex flex-col gap-2">
-            {loadingBoard ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-14 rounded-2xl bg-card animate-pulse" />
-              ))
-            ) : leaderboard.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">No data yet</div>
-            ) : (
-              leaderboard.map((entry, i) => (
-                <motion.div
-                  key={entry.username}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  className={`glass rounded-2xl p-4 flex items-center gap-3 ${
-                    entry.username === profile.username ? "border border-primary/40 glow-purple" : ""
-                  }`}
-                >
-                  <div className={`w-8 text-center font-bold text-sm ${
-                    i === 0 ? "text-yellow-400" : i === 1 ? "text-slate-300" : i === 2 ? "text-amber-600" : "text-muted-foreground"
-                  }`}>
-                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
-                  </div>
-                  <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center text-sm font-bold text-white shrink-0">
-                    {entry.username.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{entry.username}</p>
-                    <p className="text-xs text-muted-foreground">🔥 {entry.streak} days</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-yellow-400">{entry.xp}</p>
-                    <p className="text-xs text-muted-foreground">XP</p>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        )}
+          <button
+            onClick={signOut}
+            className="w-full py-3 rounded-2xl border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors mt-4"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
       <BottomNav />

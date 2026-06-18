@@ -212,9 +212,10 @@ export const LEVELS = [
   { code: "C2", label: "C2 — Mastery", description: "Native-level proficiency" },
 ] as const;
 
-export const XP_PER_LESSON = 20;
-export const XP_PER_WORD = 5;
+export const XP_PER_LESSON = 10;       // flat XP for completing a lesson
+export const XP_PER_WORD = 0;          // words no longer add XP
 export const XP_STREAK_BONUS = 10;
+export const XP_PER_QUIZ_CORRECT = 50; // XP per correct quiz answer
 
 export const XP_THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 5000];
 export const LEVEL_NAMES = ["Seed", "Sprout", "Leaf", "Branch", "Tree", "Forest", "Legend"];

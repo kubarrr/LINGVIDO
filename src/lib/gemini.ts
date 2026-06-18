@@ -1,4 +1,4 @@
-import type { LanguageLevel, LessonWord, LessonConstruction, LessonHistory } from "@/types";
+import type { LanguageLevel, LessonWord, LessonConstruction, LessonHistory, QuizQuestion } from "@/types";
 import { LANGUAGES } from "./constants";
 
 type GeneratedLesson = {
@@ -147,12 +147,44 @@ Respond ONLY with a valid JSON object in this exact format. Every field has BOTH
 {
   "date_label": "${opts.today}",
   "on_this_day": {"native": "an interesting historical event that happened on or around ${opts.today} in that culture, with context and why it mattered", "target": "..."},
-  "figure": {"native": "a notable historical figure from that culture, ideally with a birthday/anniversary near ${opts.today}; who they were, what they achieved, and their legacy", "target": "..."},
-  "geo_fact": {"native": "a vivid description of a region/place in that country (e.g. Bavaria, Andalusia, Hokkaido) — landscape, character and a surprising detail", "target": "..."},
-  "holiday": {"native": "a holiday or tradition celebrated around ${opts.today} — its origin, how people celebrate, and what it means (omit this field entirely if none fits)", "target": "..."}
+  "figure": {"native": "a notable historical figure: ideally someone truly famous (e.g. Mozart, Cervantes) with a birthday/anniversary near ${opts.today}. If no truly outstanding person fits this date, instead pick a key figure CONNECTED TO the 'on this day' event above. Explain who they were, what they achieved and their legacy.", "target": "..."},
+  "geo_fact": {"native": "a vivid description of a region/place in that country (e.g. Bavaria, Andalusia, Hokkaido) — landscape, character and a surprising detail", "target": "..."}
 }
 
 Make each paragraph accurate, specific and genuinely interesting — not generic.`;
 
   return callOpenRouter<LessonHistory>([{ type: "text", text: prompt }]);
+}
+
+// --- Daily quiz ------------------------------------------------------------
+
+export async function generateQuiz(opts: {
+  targetLanguage: string;
+  nativeLanguage: string;
+  almanac: LessonHistory;
+}): Promise<{ questions: QuizQuestion[] }> {
+  const targetLang = LANGUAGES.find((l) => l.code === opts.targetLanguage)?.name ?? opts.targetLanguage;
+  const nativeLang = LANGUAGES.find((l) => l.code === opts.nativeLanguage)?.name ?? opts.nativeLanguage;
+  const a = opts.almanac;
+
+  const prompt = `Create a fun, game-show style quiz in ${nativeLang} about the culture and country/countries where ${targetLang} is spoken. Base the first questions on today's almanac.
+
+TODAY'S ALMANAC:
+- On this day: ${a.on_this_day?.native ?? ""}
+- Notable figure: ${a.figure?.native ?? ""}
+- Geography: ${a.geo_fact?.native ?? ""}
+
+Make EXACTLY 6 multiple-choice questions, each with exactly 3 options and one correct answer. Write questions and options in ${nativeLang} (except vocabulary words which are in ${targetLang}). Use this order and categories:
+1. category "history": about the "on this day" event above
+2. category "figure": about the notable figure above
+3. category "vocab": pick a useful ${targetLang} word connected to the country/almanac and ask what it means (the 3 options are possible meanings in ${nativeLang})
+4. category "vocab": another ${targetLang} word, ask its meaning (options in ${nativeLang})
+5. category "general": general knowledge about the country/culture (food, geography, customs)
+6. category "general": a famous person, landmark or historical fact about that country
+
+Respond ONLY with valid JSON:
+{"questions":[{"question":"...","options":["...","...","..."],"correct":0,"category":"history"}]}
+"correct" is the 0-based index of the right option. Make the wrong options plausible but clearly incorrect. Keep each question short enough to answer in 10 seconds.`;
+
+  return callOpenRouter<{ questions: QuizQuestion[] }>([{ type: "text", text: prompt }]);
 }

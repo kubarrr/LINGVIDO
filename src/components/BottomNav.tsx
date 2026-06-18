@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Camera, BookImage, CalendarDays, User } from "lucide-react";
+import { Camera, BookImage, Brain, CalendarDays, User } from "lucide-react";
 
 const navItems = [
   { href: "/", icon: Camera, label: "Snap" },
   { href: "/album", icon: BookImage, label: "Album" },
+  { href: "/quiz", icon: Brain, label: "Quiz" },
   { href: "/almanac", icon: CalendarDays, label: "Almanac" },
   { href: "/profile", icon: User, label: "Profile" },
 ];
@@ -23,7 +24,7 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center gap-0.5 py-2 px-4 rounded-2xl transition-all duration-200 ${
+              className={`flex flex-col items-center gap-0.5 py-2 px-2.5 rounded-2xl transition-all duration-200 ${
                 active ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
               }`}
             >
