@@ -34,16 +34,18 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const publicPaths = ["/auth", "/onboarding", "/privacy", "/terms"];
+  const publicPaths = ["/auth", "/onboarding", "/privacy", "/terms", "/welcome"];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
+  // Logged-out visitors land on the public marketing page
   if (!user && !isPublic) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/auth";
+    redirectUrl.pathname = "/welcome";
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && pathname === "/auth") {
+  // Logged-in users skip the landing / auth screens
+  if (user && (pathname === "/auth" || pathname === "/welcome")) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/";
     return NextResponse.redirect(redirectUrl);
