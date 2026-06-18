@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [newLang, setNewLang] = useState("");
   const [newLevel, setNewLevel] = useState<LanguageLevel>("A1");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Seed local state once the profile loads
   useEffect(() => {
@@ -96,6 +97,25 @@ export default function SettingsPage() {
       toast.error("Network error — try again");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteAccount() {
+    if (!confirm("Delete your account permanently? This removes all your lessons, images and scores and cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/account", { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error ?? "Could not delete account");
+        setDeleting(false);
+        return;
+      }
+      toast.success("Account deleted");
+      router.push("/auth");
+    } catch {
+      toast.error("Network error — try again");
+      setDeleting(false);
     }
   }
 
@@ -251,6 +271,21 @@ export default function SettingsPage() {
               </button>
             )}
           </AnimatePresence>
+        </Section>
+
+        {/* Danger zone */}
+        <Section title="Danger zone">
+          <button
+            onClick={deleteAccount}
+            disabled={deleting}
+            className="flex items-center justify-center gap-2 py-3 rounded-2xl border border-destructive/40 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+          >
+            <Trash2 size={15} />
+            {deleting ? "Deleting…" : "Delete account"}
+          </button>
+          <p className="text-xs text-muted-foreground px-1">
+            Permanently removes your account, lessons, images and scores. This cannot be undone.
+          </p>
         </Section>
       </div>
 
