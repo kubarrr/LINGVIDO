@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import type { UserProfile } from "@/types";
+import { initAds } from "@/lib/ads";
 
 type ProfileContextType = {
   profile: UserProfile | null;
@@ -38,6 +39,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => { initAds(); }, []);
 
   return (
     <ProfileContext.Provider value={{ profile, loading, refresh, setProfile }}>

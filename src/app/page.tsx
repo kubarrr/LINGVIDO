@@ -10,6 +10,7 @@ import { LANGUAGES } from "@/lib/constants";
 import type { LessonInputType } from "@/types";
 import BottomNav from "@/components/BottomNav";
 import { useLanguageTheme } from "@/hooks/useLanguageTheme";
+import { showInterstitial } from "@/lib/ads";
 
 // Minimal typing for the Web Speech API (not in standard lib.dom)
 type SpeechResult = { isFinal: boolean; 0: { transcript: string }; length: number };
@@ -184,7 +185,10 @@ export default function HomePage() {
     form.append("level", level);
 
     try {
-      const res = await fetch("/api/analyze", { method: "POST", body: form });
+      // Kick off generation, then play an interstitial during the wait (native only).
+      const genPromise = fetch("/api/analyze", { method: "POST", body: form });
+      await showInterstitial();
+      const res = await genPromise;
       const data = await res.json();
       if (!res.ok) { toast.error(data.error ?? "Something went wrong"); setState("idle"); return; }
       router.push(`/lesson/${data.lesson.id}?xp=${data.xpEarned}&streak=${data.newStreak}&badges=${(data.newBadges ?? []).join(",")}`);
