@@ -151,7 +151,8 @@ Respond ONLY with a valid JSON object in this exact format. Every field has BOTH
   "geo_fact": {"native": "a vivid description of a region/place in that country (e.g. Bavaria, Andalusia, Hokkaido) — landscape, character and a surprising detail", "target": "..."}
 }
 
-Make each paragraph accurate, specific and genuinely interesting — not generic.`;
+Make each paragraph accurate, specific and genuinely interesting — not generic.
+In EVERY paragraph, wrap the 2-3 most important facts (key names, years, places) in **double asterisks** so they can be highlighted. Apply this to both the native and target versions.`;
 
   return callOpenRouter<LessonHistory>([{ type: "text", text: prompt }]);
 }

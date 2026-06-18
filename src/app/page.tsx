@@ -28,6 +28,11 @@ type SpeechRecognitionLike = {
 const SPEECH_LANG: Record<string, string> = {
   en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE", it: "it-IT", pt: "pt-PT",
   pl: "pl-PL", ja: "ja-JP", zh: "zh-CN", ko: "ko-KR", ru: "ru-RU", ar: "ar-SA", uk: "uk-UA",
+  nl: "nl-NL", sv: "sv-SE", no: "nb-NO", da: "da-DK", fi: "fi-FI", is: "is-IS",
+  cs: "cs-CZ", sk: "sk-SK", hu: "hu-HU", ro: "ro-RO", bg: "bg-BG", el: "el-GR",
+  tr: "tr-TR", hr: "hr-HR", sr: "sr-RS", sl: "sl-SI", lt: "lt-LT", lv: "lv-LV",
+  et: "et-EE", hi: "hi-IN", bn: "bn-BD", th: "th-TH", vi: "vi-VN", id: "id-ID",
+  ms: "ms-MY", he: "he-IL", fa: "fa-IR",
 };
 
 type State = "idle" | "analyzing";

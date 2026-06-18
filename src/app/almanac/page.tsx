@@ -79,20 +79,20 @@ export default function AlmanacPage() {
           </div>
         ) : almanac ? (
           <>
-            {/* Calendar date — subtle, paper-like */}
-            <div className="glass rounded-2xl px-5 py-4 flex items-center gap-3 border border-border">
-              <div className="w-11 h-11 rounded-xl bg-primary/12 flex items-center justify-center text-primary shrink-0">
-                <CalendarDays size={20} />
+            {/* Calendar date — colourful focal header */}
+            <div className="rounded-2xl overflow-hidden gradient-primary glow-purple px-5 py-4 flex items-center gap-3 text-white">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                <CalendarDays size={22} />
               </div>
               <div>
-                <p className="text-lg font-bold leading-tight">{almanac.date_label}</p>
-                <p className="text-xs text-muted-foreground">A page from {lang?.name}&apos;s calendar</p>
+                <p className="text-xl font-bold leading-tight">{almanac.date_label}</p>
+                <p className="text-xs text-white/80">A page from {lang?.name}&apos;s calendar</p>
               </div>
             </div>
 
-            <Item index={0} icon={<ScrollText size={16} />} title="On this day" value={almanac.on_this_day} mode={mode} onSpeak={speak} />
-            <Item index={1} icon={<User size={16} />} title="Notable figure" value={almanac.figure} mode={mode} onSpeak={speak} />
-            <Item index={2} icon={<MapPin size={16} />} title="Geography" value={almanac.geo_fact} mode={mode} onSpeak={speak} />
+            <Item index={0} icon={<ScrollText size={16} />} title="On this day" accent="amber" value={almanac.on_this_day} mode={mode} onSpeak={speak} />
+            <Item index={1} icon={<User size={16} />} title="Notable figure" accent="sky" value={almanac.figure} mode={mode} onSpeak={speak} />
+            <Item index={2} icon={<MapPin size={16} />} title="Geography" accent="emerald" value={almanac.geo_fact} mode={mode} onSpeak={speak} />
           </>
         ) : (
           <div className="glass rounded-2xl p-8 flex flex-col items-center gap-3 text-center">
@@ -107,12 +107,33 @@ export default function AlmanacPage() {
   );
 }
 
+const ACCENTS: Record<string, { text: string; bg: string }> = {
+  amber: { text: "text-amber-500", bg: "bg-amber-500/15" },
+  sky: { text: "text-sky-500", bg: "bg-sky-500/15" },
+  emerald: { text: "text-emerald-500", bg: "bg-emerald-500/15" },
+};
+
+/** Renders text with **bold** segments highlighted. */
+function RichText({ text, className }: { text: string; className?: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <p className={className}>
+      {parts.map((p, i) =>
+        /^\*\*[^*]+\*\*$/.test(p)
+          ? <strong key={i} className="font-bold text-foreground">{p.slice(2, -2)}</strong>
+          : <span key={i}>{p}</span>
+      )}
+    </p>
+  );
+}
+
 function Item({
-  index, icon, title, value, mode, onSpeak,
+  index, icon, title, accent, value, mode, onSpeak,
 }: {
   index: number;
   icon: React.ReactNode;
   title: string;
+  accent: keyof typeof ACCENTS;
   value: Bilingual;
   mode: DisplayMode;
   onSpeak: (t: string) => void;
@@ -121,25 +142,24 @@ function Item({
   const hasNative = !!value.native?.trim();
   const showNative = mode === "both" && hasNative;
   const showTarget = hasTarget || !hasNative;
+  const a = ACCENTS[accent] ?? ACCENTS.amber;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }}
       className="glass rounded-2xl p-4 flex flex-col gap-2"
     >
-      <div className="flex items-center gap-2 text-muted-foreground">
-        {icon}
-        <h4 className="text-xs uppercase tracking-wider font-semibold">{title}</h4>
+      <div className="flex items-center gap-2">
+        <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${a.bg} ${a.text}`}>{icon}</span>
+        <h4 className={`text-xs uppercase tracking-wider font-bold ${a.text}`}>{title}</h4>
       </div>
-      {showNative && <p className="text-[15px] leading-relaxed text-foreground/90">{value.native}</p>}
+      {showNative && <RichText text={value.native} className="text-[15px] leading-relaxed text-foreground/90" />}
       {showTarget && (
         <div className={`flex items-start gap-2 ${showNative ? "border-t border-border pt-2 mt-0.5" : ""}`}>
           <button onClick={() => onSpeak(value.target)} className="text-muted-foreground hover:text-primary mt-1 shrink-0">
             <Volume2 size={14} />
           </button>
-          <p className={`text-[15px] leading-relaxed ${showNative ? "text-foreground/70 italic" : "text-foreground/90"}`}>
-            {value.target || value.native}
-          </p>
+          <RichText text={value.target || value.native} className={`text-[15px] leading-relaxed ${showNative ? "text-foreground/70 italic" : "text-foreground/90"}`} />
         </div>
       )}
     </motion.div>
