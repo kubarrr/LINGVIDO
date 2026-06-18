@@ -147,7 +147,7 @@ Respond ONLY with a valid JSON object in this exact format. Every field has BOTH
 {
   "date_label": "${opts.today}",
   "on_this_day": {"native": "an interesting historical event that happened on or around ${opts.today} in that culture, with context and why it mattered", "target": "..."},
-  "figure": {"native": "a notable historical figure: ideally someone truly famous (e.g. Mozart, Cervantes) with a birthday/anniversary near ${opts.today}. If no truly outstanding person fits this date, instead pick a key figure CONNECTED TO the 'on this day' event above. Explain who they were, what they achieved and their legacy.", "target": "..."},
+  "figure": {"native": "a notable historical figure chosen by ONE of two rules: (1) someone whose birthday is EXACTLY on ${opts.today} (the same day, any year) — only if truly notable; OR (2) otherwise, a key person CONNECTED TO the 'on this day' event above. Do NOT pick someone merely born 'around' this date. Explain who they were, what they achieved and their legacy.", "target": "..."},
   "geo_fact": {"native": "a vivid description of a region/place in that country (e.g. Bavaria, Andalusia, Hokkaido) — landscape, character and a surprising detail", "target": "..."}
 }
 
